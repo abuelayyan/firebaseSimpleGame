@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html ng-app>
+
+<head>
+    <meta charset="utf-8">
+    <title>Firebase Simple Game</title>
+    <link rel="icon" href="oe.png">
+    <style type="text/css">
+        #tabs {
+            border: solid;
+            border-color: #00B1C1;
+            background-color: #00B1C1;
+            border-width: 100%;
+            height: 35px;
+            color: white;
+            margin: 0px;
+            padding-top: 1%;
+            z-index: 3;
+        }
+
+        .tabsLink {
+            color: white;
+            padding-left: 5%;
+            font-size: 20px;
+
+        }
+
+        .tabsLink:hover {
+            text-decoration: overline;
+            color: white;
+        }
+
+        a.tabsLink {
+            text-decoration: none;
+        }
+
+        .SelectedTab {
+            color: grey;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 16px;
+        }
+
+        .sticky {
+            position: fixed;
+            top: 0;
+            width: 100%
+        }
+
+        .sticky+.content {
+            padding-top: 102px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 3px;
+            background-color: #800000;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: white;
+            text-decoration: overline;
+        }
+    </style>
+
+</head>
+
+<body style="background-image: url('bodyBG1.jpg'); background-attachment: fixed;" onload="startCounter()">
+    <div>
+        <center>
+            <h2>The Game</h2> <br>
+            <h3 id="startingGame"> Waiting for Omar Elayyan to start the game</h3>
+            <label for="fname">Your name:</label>
+            <input type="text" id="fname" name="fname">
+            <button onclick="submitName()"> Submit Name </button>
+
+            <br> <br>
+            <label for="pass">Password:</label>
+            <input type="password" id="pass" name="pass">
+            <button onclick="startGame()"> Start The Game </button>
+            <p id="soFar"></p>
+        </center>
+        <button style="display:none; right: 320px; top: 258px; position:fixed;" id="buttonCapstone" onclick="youwon()">
+            Click Me </button>
+    </div>
+</body>
+
+<script src="https://www.gstatic.com/firebasejs/8.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.7.1/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.7.1/firebase-database.js"></script>
+
+<script>
+    // var firebaseConfig = {
+    //     apiKey: "",
+    //     authDomain: "",
+    //     databaseURL: "",
+    //     projectId: "",
+    //     storageBucket: "",
+    //     messagingSenderId: "",
+    //     appId: "",
+    //     measurementId: ""
+    // };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
+    var userID = 0;
+    var password = 0;
+    var winner = "";
+    var won = false;
+    var started = false;
+    function startCounter() {
+        firebase.database().ref('startGame').on('value', (snapshot) => {
+            started = snapshot.val();
+            console.log(started)
+            if (started) {
+                document.getElementById("buttonCapstone").style.display = "inline";
+                document.getElementById("startingGame").innerHTML = "Started";
+                yourFunction();
+            }
+        })
+        firebase.database().ref('Won').on('value', (snapshot) => {
+            won = snapshot.val();
+        })
+        firebase.database().ref('Started/id').on('value', (snapshot) => {
+            userID = snapshot.val() + 1;
+            console.log(userID);
+        })
+        firebase.database().ref('admin/password').on('value', (snapshot) => {
+            password = snapshot.val();
+        })
+    }
+    var name = "";
+    function submitName() {
+        name = document.getElementById('fname').value;
+        let obj = {
+            Name: name,
+            id: userID,
+        }
+        firebase.database().ref('Users/User' + userID).set(obj);
+        console.log(name);
+
+        let obj2 = {
+            id: userID
+        }
+        firebase.database().ref('Started').set(obj2);
+    }
+</script>
+
+<script type="text/javascript">
+    var rightOrLeft = document.getElementById("buttonCapstone").style.right;
+    var upOrDown = document.getElementById("buttonCapstone").style.bottom;
+    var seconds = 0;
+    var rand1 = 0;
+    var rand2 = 0;
+    var rand3 = 0;
+    var rand4 = 0;
+
+    function getRandomArbitrary(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+    var winningPlayer = "";
+    async function yourFunction() {
+        rand1 = Math.random() * (500 - 250) + 250;
+        rand2 = Math.random() * (800 - 350) + 350;
+        document.getElementById("buttonCapstone").style.top = rand1 + "px";
+        document.getElementById("buttonCapstone").style.right = rand2 + "px";
+        if (won) {
+            document.getElementById("buttonCapstone").style.display = "none";
+
+            const dbRef = firebase.database().ref();
+            await dbRef.child("winner").child('Name').get().then((snapshot) => {
+                winningPlayer = snapshot.val();
+                console.log(JSON.stringify(winningPlayer));
+            }).catch((error) => {
+                console.error(error);
+            });
+            // firebase.database().ref('winner/Name').get().then((name2)=>{
+            //     winningPlayer = name2;
+            // });
+            document.getElementById("startingGame").innerHTML = winningPlayer + " won the game";
+            return
+        }
+        setTimeout(yourFunction, 1000);
+    }
+    function startGame() {
+        if (document.getElementById('pass').value == password) {
+            firebase.database().ref('startGame').set(true);
+        }
+    }
+    function youwon() {
+        let obj3 = {
+            Name: name,
+        }
+        firebase.database().ref('winner').set(obj3);
+        firebase.database().ref('Won').set(true);
+        location.href = 'youwon.html';
+    }
+
+</script>
+
+</html>
